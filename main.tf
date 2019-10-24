@@ -50,6 +50,7 @@ locals {
 
   # ⚠️ remove when https://github.com/hashicorp/terraform/issues/22560 gets fixed
   services_with_sd = [for s in local.services : s if lookup(s, "service_discovery_enabled", false)]
+  services_with_sd_count = length(local.services_with_sd)
 }
 
 data "aws_availability_zones" "this" {}
@@ -336,37 +337,38 @@ resource "aws_lb_listener" "this" {
 
 # SERVICE DISCOVERY
 
-resource "aws_service_discovery_private_dns_namespace" "this" {
-  count = length([for s in local.services : s if lookup(s, "service_discovery_enabled", false)]) > 0 ? 1 : 0
+# resource "aws_service_discovery_private_dns_namespace" "this" {
+#   # ⚠️ replace when https://github.com/hashicorp/terraform/issues/22560 gets fixed
+#   count = local.services_with_sd_count > 0 ? 1 : 0
 
-  name        = "${var.name}.${terraform.workspace}.local"
-  description = "${var.name} private dns namespace"
-  vpc         = local.vpc_id
-}
+#   name        = "${var.name}.${terraform.workspace}.local"
+#   description = "${var.name} private dns namespace"
+#   vpc         = local.vpc_id
+# }
 
-resource "aws_service_discovery_service" "this" {
-  # ⚠️ replace when https://github.com/hashicorp/terraform/issues/22560 gets fixed
-  # for_each = [for s in local.services : s if lookup(s, "service_discovery_enabled", false)]
-  count = length(local.services_with_sd) > 0 ? length(local.services_with_sd) : 0
+# resource "aws_service_discovery_service" "this" {
+#   # ⚠️ replace when https://github.com/hashicorp/terraform/issues/22560 gets fixed
+#   # for_each = [for s in local.services : s if lookup(s, "service_discovery_enabled", false)]
+#   count = local.services_with_sd_count > 0 ? local.services_with_sd_count : 0
 
-  # name = each.value.name
-  name = local.services_with_sd[count.index].name
+#   # name = each.value.name
+#   name = local.services_with_sd[count.index].name
 
-  dns_config {
-    namespace_id = aws_service_discovery_private_dns_namespace.this[0].id
+#   dns_config {
+#     namespace_id = aws_service_discovery_private_dns_namespace.this[0].id
 
-    dns_records {
-      ttl  = 10
-      type = "A"
-    }
+#     dns_records {
+#       ttl  = 10
+#       type = "A"
+#     }
 
-    routing_policy = "MULTIVALUE"
-  }
+#     routing_policy = "MULTIVALUE"
+#   }
 
-  health_check_custom_config {
-    failure_threshold = 1
-  }
-}
+#   health_check_custom_config {
+#     failure_threshold = 1
+#   }
+# }
 
 # ECS SERVICES
 
@@ -402,13 +404,13 @@ resource "aws_ecs_service" "this" {
     container_port   = local.services[count.index].container_port
   }
 
-  dynamic "service_registries" {
-    for_each = [for s in aws_service_discovery_service.this : s if s.name == local.services[count.index].name]
+  # dynamic "service_registries" {
+  #   for_each = [for s in aws_service_discovery_service.this : s if s.name == local.services[count.index].name]
 
-    content {
-      registry_arn = service_registries.value.arn
-    }
-  }
+  #   content {
+  #     registry_arn = service_registries.value.arn
+  #   }
+  # }
 
   depends_on = ["aws_lb_target_group.this", "aws_lb_listener.this"]
 
