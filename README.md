@@ -72,6 +72,7 @@ module "fargate" {
 
       health_check_interval = 100 # Number, Optional: sets the interval in seconds for the health check operation. default = 30
       health_check_path     = "/healthz" # String, Optional: sets the path that the tasks are exposing to perform health checks. default = "/"
+      deregistration_delay  = 300 # Number, Optional: sets The amount time for Elastic Load Balancing to wait before changing the state of a deregistering target from draining to unused. default = 300
 
       task_role_arn = "arn:...." # String(valid ARN), Optional: sets a IAM role to the running ecs task.
 
