@@ -297,6 +297,7 @@ resource "aws_lb_target_group" "this" {
   protocol    = "HTTP"
   vpc_id      = local.vpc_id
   target_type = "ip"
+  deregistration_delay = lookup(local.services[count.index], "deregistration_delay", var.alb_default_deregistration_delay)
 
   health_check {
     interval            = lookup(local.services[count.index], "health_check_interval", var.alb_default_health_check_interval)

@@ -75,6 +75,10 @@ variable "aws_ssm_allowed_parameters_arn" {
 
 ## ALB variables
 
+variable "alb_default_deregistration_delay" {
+  default = 300
+}
+
 variable "alb_default_health_check_interval" {
   default = 30
 }
