@@ -72,7 +72,7 @@ module "vpc" {
 
   # NAT gateway for private subnets
   enable_nat_gateway = var.vpc_create_nat
-  single_nat_gateway = var.vpc_create_nat
+  one_nat_gateway_per_az = true
 
   # Every instance deployed within the VPC will get a hostname
   enable_dns_hostnames = true
