@@ -459,8 +459,6 @@ resource "aws_appautoscaling_target" "this" {
   service_namespace  = "ecs"
 
   depends_on = ["aws_ecs_service.this"]
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_appautoscaling_policy" "this" {
@@ -664,8 +662,6 @@ data "template_file" "codepipeline_events" {
   vars = {
     codepipeline_names = jsonencode(aws_codepipeline.this[*].name)
   }
-
-  tags = local.services[count.index].tags
 }
 
 data "template_file" "codepipeline_events_sns" {
@@ -759,8 +755,6 @@ data "template_file" "events" {
   vars = {
     codepipeline_arn = aws_codepipeline.this[count.index].arn
   }
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_iam_role_policy" "events" {
@@ -803,8 +797,6 @@ resource "aws_cloudwatch_event_target" "events" {
   target_id = "${var.name}-${terraform.workspace}-${local.services[count.index].name}-codepipeline"
   arn       = aws_codepipeline.this[count.index].arn
   role_arn  = aws_iam_role.events[count.index].arn
-
-  tags = local.services[count.index].tags
 }
 
 ### End Remove
