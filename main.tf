@@ -433,8 +433,6 @@ resource "aws_ecs_service" "this" {
   lifecycle {
     ignore_changes = ["desired_count"]
   }
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_iam_role" "autoscaling" {
