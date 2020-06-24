@@ -99,8 +99,6 @@ data "template_file" "ecr-lifecycle" {
   vars = {
     count = lookup(local.services[count.index], "registry_retention_count", var.ecr_default_retention_count)
   }
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_ecr_lifecycle_policy" "this" {
@@ -173,8 +171,6 @@ data "template_file" "tasks" {
     log_group      = aws_cloudwatch_log_group.this[count.index].name
     region         = var.region != "" ? var.region : data.aws_region.current.name
   }, lookup(local.services[count.index], "task_definition_template_vars", {}))
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -305,8 +301,6 @@ resource "random_id" "target_group_sufix" {
   }
 
   byte_length = 2
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_lb_target_group" "this" {
@@ -535,8 +529,6 @@ data "template_file" "buildspec" {
   vars = {
     container_name = local.services[count.index].name
   }
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_codebuild_project" "this" {
@@ -587,8 +579,6 @@ data "template_file" "codepipeline" {
     aws_s3_bucket_arn  = aws_s3_bucket.this.arn
     ecr_repository_arn = aws_ecr_repository.this[count.index].arn
   }
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_iam_role_policy" "codepipeline" {
@@ -694,7 +684,6 @@ data "template_file" "codepipeline_events_sns" {
   vars = {
     sns_arn = aws_sns_topic.codepipeline_events[count.index].arn
   }
-  tags = local.services[count.index].tags
 }
 
 resource "aws_cloudwatch_event_rule" "codepipeline_events" {
@@ -750,8 +739,6 @@ data "template_file" "metric_dashboard" {
     cluster_name   = aws_ecs_cluster.this.name
     service_name   = local.services[count.index].name
   }
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_cloudwatch_dashboard" "this" {
@@ -806,8 +793,6 @@ data "template_file" "ecr_event" {
   vars = {
     ecr_repository_name = aws_ecr_repository.this[count.index].name
   }
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_cloudwatch_event_rule" "events" {
