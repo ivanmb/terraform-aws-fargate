@@ -470,8 +470,6 @@ resource "aws_appautoscaling_policy" "this" {
   scalable_dimension = aws_appautoscaling_target.this[count.index].scalable_dimension
   service_namespace  = aws_appautoscaling_target.this[count.index].service_namespace
 
-  tags = local.services[count.index].tags
-
   target_tracking_scaling_policy_configuration {
     target_value = lookup(local.services[count.index], "auto_scaling_max_cpu_util", 100)
 
@@ -708,8 +706,6 @@ resource "aws_cloudwatch_event_target" "codepipeline_events" {
   rule      = aws_cloudwatch_event_rule.codepipeline_events[count.index].name
   target_id = "${var.name}-${terraform.workspace}-codepipeline"
   arn       = aws_sns_topic.codepipeline_events[count.index].arn
-
-  tags = local.services[count.index].tags
 }
 
 ### CLOUDWATCH BASIC DASHBOARD
@@ -763,8 +759,6 @@ resource "aws_iam_role_policy" "events" {
   name   = "${var.name}-${terraform.workspace}-${local.services[count.index].name}-events-role-policy"
   role   = aws_iam_role.events[count.index].id
   policy = data.template_file.events[count.index].rendered
-
-  tags = local.services[count.index].tags
 }
 
 data "template_file" "ecr_event" {
