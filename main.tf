@@ -107,8 +107,6 @@ resource "aws_ecr_lifecycle_policy" "this" {
   repository = aws_ecr_repository.this[count.index].name
 
   policy = data.template_file.ecr-lifecycle[count.index].rendered
-
-  tags = local.services[count.index].tags
 }
 
 # ECS CLUSTER
@@ -195,8 +193,6 @@ data "aws_ecs_task_definition" "this" {
 
   # This avoid fetching an unexisting task definition before its creation
   depends_on = ["aws_ecs_task_definition.this"]
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_cloudwatch_log_group" "this" {
@@ -353,8 +349,6 @@ resource "aws_lb_listener" "this" {
     target_group_arn = aws_lb_target_group.this[count.index].arn
     type             = "forward"
   }
-
-  tags = local.services[count.index].tags
 }
 
 # SERVICE DISCOVERY
@@ -587,8 +581,6 @@ resource "aws_iam_role_policy" "codepipeline" {
   name   = "${var.name}-${terraform.workspace}-${local.services[count.index].name}-codepipeline-role-policy"
   role   = aws_iam_role.codepipeline[count.index].id
   policy = data.template_file.codepipeline[count.index].rendered
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_codepipeline" "this" {
@@ -712,8 +704,6 @@ resource "aws_sns_topic_policy" "codepipeline_events" {
   arn = aws_sns_topic.codepipeline_events[count.index].arn
 
   policy = data.template_file.codepipeline_events_sns[count.index].rendered
-
-  tags = local.services[count.index].tags
 }
 
 resource "aws_cloudwatch_event_target" "codepipeline_events" {
@@ -747,8 +737,6 @@ resource "aws_cloudwatch_dashboard" "this" {
   dashboard_name = "${var.name}-${terraform.workspace}-${local.services[count.index].name}-metrics-dashboard"
 
   dashboard_body = data.template_file.metric_dashboard[count.index].rendered
-
-  tags = local.services[count.index].tags
 }
 
 ### Remove after ECR as CodePipeline Source gets fully integrated with AWS Provider
