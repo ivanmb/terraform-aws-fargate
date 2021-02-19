@@ -6,7 +6,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 2.12.0"
+      version = ">= 3.10"
     }
     random = {
       source = "hashicorp/random"
@@ -31,23 +31,23 @@ locals {
   vpc_id = ! var.vpc_create ? var.vpc_external_id : module.vpc.vpc_id
 
   vpc_public_subnets = (
-    length(var.vpc_public_subnets) > 0 || ! var.vpc_create ?
-    var.vpc_public_subnets :
-    list(
-      cidrsubnet(var.vpc_cidr, 8, 1),
-      cidrsubnet(var.vpc_cidr, 8, 2),
-      cidrsubnet(var.vpc_cidr, 8, 3)
-    )
+  length(var.vpc_public_subnets) > 0 || ! var.vpc_create ?
+  var.vpc_public_subnets :
+  list(
+  cidrsubnet(var.vpc_cidr, 8, 1),
+  cidrsubnet(var.vpc_cidr, 8, 2),
+  cidrsubnet(var.vpc_cidr, 8, 3)
+  )
 
   )
   vpc_private_subnets = (
-    length(var.vpc_private_subnets) > 0 || ! var.vpc_create ?
-    var.vpc_private_subnets :
-    list(
-      cidrsubnet(var.vpc_cidr, 8, 101),
-      cidrsubnet(var.vpc_cidr, 8, 102),
-      cidrsubnet(var.vpc_cidr, 8, 103)
-    )
+  length(var.vpc_private_subnets) > 0 || ! var.vpc_create ?
+  var.vpc_private_subnets :
+  list(
+  cidrsubnet(var.vpc_cidr, 8, 101),
+  cidrsubnet(var.vpc_cidr, 8, 102),
+  cidrsubnet(var.vpc_cidr, 8, 103)
+  )
 
   )
   vpc_private_subnets_ids = ! var.vpc_create ? var.vpc_external_private_subnets_ids : module.vpc.private_subnets
@@ -149,7 +149,8 @@ data "aws_iam_policy_document" "tasks" {
     actions = [
       "ssm:GetParameter*"
     ]
-    resources = ["${var.aws_ssm_allowed_parameters_arn}"]
+    resources = [
+      var.aws_ssm_allowed_parameters_arn]
   }
 
   statement {
@@ -201,7 +202,7 @@ data "aws_ecs_task_definition" "this" {
   task_definition = element(aws_ecs_task_definition.this[*].family, count.index)
 
   # This avoid fetching an unexisting task definition before its creation
-  depends_on = ["aws_ecs_task_definition.this"]
+  depends_on = [aws_ecs_task_definition.this]
 }
 
 resource "aws_cloudwatch_log_group" "this" {
@@ -281,7 +282,7 @@ resource "aws_security_group" "services_dynamic" {
 
   dynamic "ingress" {
     for_each = [for k, v in var.services : k
-      if k != local.services[count.index].name &&
+    if k != local.services[count.index].name &&
     contains(lookup(local.services[count.index], "allow_connections_from", []), k)]
 
     content {
@@ -352,7 +353,7 @@ resource "aws_lb_listener" "this" {
   protocol          = lookup(local.services[count.index], "acm_certificate_arn", "") != "" ? "HTTPS" : "HTTP"
   ssl_policy        = lookup(local.services[count.index], "acm_certificate_arn", "") != "" ? "ELBSecurityPolicy-FS-2018-06" : null
   certificate_arn   = lookup(local.services[count.index], "acm_certificate_arn", null)
-  depends_on        = ["aws_lb_target_group.this"]
+  depends_on        = [aws_lb_target_group.this]
 
   default_action {
     target_group_arn = aws_lb_target_group.this[count.index].arn
@@ -437,10 +438,10 @@ resource "aws_ecs_service" "this" {
   #   }
   # }
 
-  depends_on = ["aws_lb_target_group.this", "aws_lb_listener.this"]
+  depends_on = [aws_lb_target_group.this, aws_lb_listener.this]
 
   lifecycle {
-    ignore_changes = ["desired_count"]
+    ignore_changes = [desired_count]
   }
 }
 
@@ -465,7 +466,7 @@ resource "aws_appautoscaling_target" "this" {
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 
-  depends_on = ["aws_ecs_service.this"]
+  depends_on = [aws_ecs_service.this]
 }
 
 resource "aws_appautoscaling_policy" "this" {
@@ -488,7 +489,7 @@ resource "aws_appautoscaling_policy" "this" {
     }
   }
 
-  depends_on = ["aws_appautoscaling_target.this"]
+  depends_on = [aws_appautoscaling_target.this]
 }
 
 # CODEBUILD
@@ -654,7 +655,7 @@ resource "aws_codepipeline" "this" {
     }
   }
 
-  depends_on = ["aws_iam_role_policy.codebuild", "aws_ecs_service.this"]
+  depends_on = [aws_iam_role_policy.codebuild, aws_ecs_service.this]
 }
 
 # CODEPIPELINE STATUS SNS
@@ -786,7 +787,7 @@ resource "aws_cloudwatch_event_rule" "events" {
 
   event_pattern = data.template_file.ecr_event[count.index].rendered
 
-  depends_on = ["aws_codepipeline.this"]
+  depends_on = [aws_codepipeline.this]
 
   tags = local.services[count.index].tags
 }
