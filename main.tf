@@ -1,10 +1,19 @@
 # Main Module file
 
 terraform {
-  required_version = ">= 0.12"
+  required_version = ">= 0.13"
 
   required_providers {
-    aws = ">= 2.12.0"
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 2.12.0"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+    template = {
+      source = "hashicorp/template"
+    }
   }
 }
 
@@ -29,8 +38,8 @@ locals {
       cidrsubnet(var.vpc_cidr, 8, 2),
       cidrsubnet(var.vpc_cidr, 8, 3)
     )
-  )
 
+  )
   vpc_private_subnets = (
     length(var.vpc_private_subnets) > 0 || ! var.vpc_create ?
     var.vpc_private_subnets :
@@ -39,8 +48,8 @@ locals {
       cidrsubnet(var.vpc_cidr, 8, 102),
       cidrsubnet(var.vpc_cidr, 8, 103)
     )
-  )
 
+  )
   vpc_private_subnets_ids = ! var.vpc_create ? var.vpc_external_private_subnets_ids : module.vpc.private_subnets
 
   vpc_public_subnets_ids = ! var.vpc_create ? var.vpc_external_public_subnets_ids : module.vpc.public_subnets
@@ -49,7 +58,7 @@ locals {
   services_count = length(var.services)
 
   # ⚠️ remove when https://github.com/hashicorp/terraform/issues/22560 gets fixed
-  services_with_sd = [for s in local.services : s if lookup(s, "service_discovery_enabled", false)]
+  services_with_sd       = [for s in local.services : s if lookup(s, "service_discovery_enabled", false)]
   services_with_sd_count = length(local.services_with_sd)
 }
 
@@ -59,7 +68,7 @@ data "aws_region" "current" {}
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.9.0"
+  version = "2.70.0"
 
   create_vpc = var.vpc_create
 
@@ -72,7 +81,7 @@ module "vpc" {
 
   # NAT gateway for private subnets
   enable_nat_gateway = var.vpc_create_nat
-  single_nat_gateway = var.vpc_create_nat
+  single_nat_gateway = var.vpc_single_nat
 
   # Every instance deployed within the VPC will get a hostname
   enable_dns_hostnames = true
@@ -302,11 +311,11 @@ resource "random_id" "target_group_sufix" {
 resource "aws_lb_target_group" "this" {
   count = local.services_count > 0 ? local.services_count : 0
 
-  name        = "${var.name}-${local.services[count.index].name}-${random_id.target_group_sufix[count.index].hex}"
-  port        = random_id.target_group_sufix[count.index].keepers.container_port
-  protocol    = "HTTP"
-  vpc_id      = local.vpc_id
-  target_type = "ip"
+  name                 = "${var.name}-${local.services[count.index].name}-${random_id.target_group_sufix[count.index].hex}"
+  port                 = random_id.target_group_sufix[count.index].keepers.container_port
+  protocol             = "HTTP"
+  vpc_id               = local.vpc_id
+  target_type          = "ip"
   deregistration_delay = lookup(local.services[count.index], "deregistration_delay", var.alb_default_deregistration_delay)
 
   health_check {
@@ -325,8 +334,8 @@ resource "aws_lb_target_group" "this" {
 }
 
 resource "aws_lb" "this" {
-  count = local.services_count > 0 ? local.services_count : 0
-  internal        = lookup(local.services[count.index], "internal", false)
+  count    = local.services_count > 0 ? local.services_count : 0
+  internal = lookup(local.services[count.index], "internal", false)
 
   name            = "${var.name}-${terraform.workspace}-${local.services[count.index].name}-alb"
   subnets         = lookup(local.services[count.index], "internal", false) ? slice(local.vpc_private_subnets_ids, 0, min(length(data.aws_availability_zones.this.names), length(local.vpc_private_subnets_ids))) : slice(local.vpc_public_subnets_ids, 0, min(length(data.aws_availability_zones.this.names), length(local.vpc_public_subnets_ids)))

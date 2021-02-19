@@ -38,6 +38,11 @@ variable "vpc_create_nat" {
   default     = true
 }
 
+variable "vpc_single_nat" {
+  description = "Whether or not use a single NAT gateway in the VPC managed by this module."
+  default     = true
+}
+
 ## External VPC variables
 
 variable "vpc_external_id" {
