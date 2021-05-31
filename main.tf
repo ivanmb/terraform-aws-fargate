@@ -6,7 +6,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 3.10"
+      version = ">= 3.42"
     }
     random = {
       source = "hashicorp/random"
@@ -405,6 +405,11 @@ resource "aws_ecs_service" "this" {
   cluster       = aws_ecs_cluster.this.name
   desired_count = local.services[count.index].replicas
   launch_type   = "FARGATE"
+
+  deployment_circuit_breaker {
+    enable = true
+    rollback = true
+  }
 
   task_definition = "${aws_ecs_task_definition.this[count.index].family}:${max(
     aws_ecs_task_definition.this[count.index].revision,
