@@ -108,3 +108,13 @@ output "codepipeline_events_sns_arn" {
   description = "ARN of CodePipeline's SNS Topic"
   value       = var.codepipeline_events_enabled ? join(",", aws_sns_topic.codepipeline_events.*.arn) : "not set"
 }
+
+# ADDITIONAL PORTS
+
+output "web_security_group_rule_wss" {
+  value = aws_security_group_rule.port_wss_ingress_web
+}
+
+output "service_security_group_rule_wss" {
+  value = aws_security_group_rule.port_wss_ingress_service
+}

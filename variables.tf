@@ -92,6 +92,12 @@ variable "alb_default_health_check_path" {
   default = "/"
 }
 
+## ADDITIONAL PORTS
+
+variable "additional_ports" {
+  default = []
+}
+
 ## CODEPIPELINE SNS EVENTS varialbes
 
 variable "codepipeline_events_enabled" {

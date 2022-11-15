@@ -60,6 +60,7 @@ locals {
   # ⚠️ remove when https://github.com/hashicorp/terraform/issues/22560 gets fixed
   services_with_sd       = [for s in local.services : s if lookup(s, "service_discovery_enabled", false)]
   services_with_sd_count = length(local.services_with_sd)
+  additional_ports       =  toset(var.additional_ports)
 }
 
 data "aws_availability_zones" "this" {}
@@ -297,6 +298,26 @@ resource "aws_security_group" "services_dynamic" {
   tags = local.services[count.index].tags
 }
 
+resource "aws_security_group_rule" "port_wss_ingress_service" {
+  for_each          = local.additional_ports
+  type              = "ingress"
+  from_port         = each.value
+  to_port           = each.value
+  protocol          = "tcp"
+  security_group_id = aws_security_group.services[0].id
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+resource "aws_security_group_rule" "port_wss_ingress_web" {
+  for_each          = local.additional_ports
+  type              = "ingress"
+  from_port         = each.value
+  to_port           = each.value
+  protocol          = "tcp"
+  security_group_id = aws_security_group.web.id
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
 # ALBs
 
 resource "random_id" "target_group_sufix" {
@@ -334,6 +355,30 @@ resource "aws_lb_target_group" "this" {
   tags = local.services[count.index].tags
 }
 
+resource "aws_lb_target_group" "additional_port_target_group" {
+  for_each             = local.additional_ports
+  name                 = "${var.name}-${local.services[0].name}-${random_id.target_group_sufix[0].hex}-${each.value}"
+  port                 = each.value
+  protocol             = "HTTP"
+  vpc_id               = local.vpc_id
+  target_type          = "ip"
+  deregistration_delay = lookup(local.services[0], "deregistration_delay", var.alb_default_deregistration_delay)
+
+  health_check {
+    interval            = lookup(local.services[0], "health_check_interval", var.alb_default_health_check_interval)
+    path                = lookup(local.services[0], "health_check_path", var.alb_default_health_check_path)
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    matcher             = "200-299"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = local.services[0].tags
+}
+
 resource "aws_lb" "this" {
   count    = local.services_count > 0 ? local.services_count : 0
   internal = lookup(local.services[count.index], "internal", false)
@@ -357,6 +402,18 @@ resource "aws_lb_listener" "this" {
 
   default_action {
     target_group_arn = aws_lb_target_group.this[count.index].arn
+    type             = "forward"
+  }
+}
+resource "aws_lb_listener" "additional_portlistener" {
+  for_each          = local.additional_ports
+  load_balancer_arn = aws_lb.this[0].arn
+  port              = each.value
+  protocol          = "HTTP"
+  depends_on        = [aws_lb_target_group.additional_port_target_group]
+
+  default_action {
+    target_group_arn = aws_lb_target_group.additional_port_target_group[each.key].arn
     type             = "forward"
   }
 }
@@ -433,6 +490,14 @@ resource "aws_ecs_service" "this" {
     target_group_arn = aws_lb_target_group.this[count.index].arn
     container_name   = local.services[count.index].name
     container_port   = local.services[count.index].container_port
+  }
+  dynamic "load_balancer" {
+    for_each = local.additional_ports
+    content {
+      target_group_arn = aws_lb_target_group.additional_port_target_group[load_balancer.key].arn
+      container_name   = local.services[0].name
+      container_port   = load_balancer.value
+    }
   }
 
   # dynamic "service_registries" {
