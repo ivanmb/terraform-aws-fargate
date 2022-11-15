@@ -115,6 +115,6 @@ output "web_security_group_rule_additional" {
   value = aws_security_group_rule.additional_port_ingress_web
 }
 
-output "service_security_group_rule_wss" {
+output "service_security_group_rule_additional" {
   value = aws_security_group_rule.additional_port_ingress_service
 }
