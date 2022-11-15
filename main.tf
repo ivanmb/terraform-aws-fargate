@@ -367,6 +367,7 @@ resource "aws_lb_target_group" "additional_port_target_group" {
   health_check {
     interval            = lookup(local.services[0], "health_check_interval", var.alb_default_health_check_interval)
     path                = lookup(local.services[0], "health_check_path", var.alb_default_health_check_path)
+    port                = local.services[0].container_port
     healthy_threshold   = 3
     unhealthy_threshold = 3
     matcher             = "200-299"
