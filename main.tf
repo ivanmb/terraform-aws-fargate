@@ -298,7 +298,7 @@ resource "aws_security_group" "services_dynamic" {
   tags = local.services[count.index].tags
 }
 
-resource "aws_security_group_rule" "port_wss_ingress_service" {
+resource "aws_security_group_rule" "additional_port_ingress_service" {
   for_each          = local.additional_ports
   type              = "ingress"
   from_port         = each.value
@@ -308,7 +308,7 @@ resource "aws_security_group_rule" "port_wss_ingress_service" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
-resource "aws_security_group_rule" "port_wss_ingress_web" {
+resource "aws_security_group_rule" "additional_port_ingress_web" {
   for_each          = local.additional_ports
   type              = "ingress"
   from_port         = each.value

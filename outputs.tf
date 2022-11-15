@@ -111,10 +111,10 @@ output "codepipeline_events_sns_arn" {
 
 # ADDITIONAL PORTS
 
-output "web_security_group_rule_wss" {
-  value = aws_security_group_rule.port_wss_ingress_web
+output "web_security_group_rule_additional" {
+  value = aws_security_group_rule.additional_port_ingress_web
 }
 
 output "service_security_group_rule_wss" {
-  value = aws_security_group_rule.port_wss_ingress_service
+  value = aws_security_group_rule.additional_port_ingress_service
 }
