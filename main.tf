@@ -25,11 +25,6 @@ provider "template" {
   version = "~> 2.1"
 }
 
-provider "aws" {
-  alias = "useast1"
-  region = "us-east-1"
-}
-
 # VPC CONFIGURATION
 
 locals {
@@ -504,11 +499,14 @@ resource "aws_appautoscaling_policy" "this" {
 
 # CODEBUILD
 
+locals {
+  s3_suffix = data.aws_region.current.name == "us-east-1" ? "" : data.aws_region.current.name
+}
+
 resource "aws_s3_bucket" "this" {
-  bucket        = "${var.name}-${terraform.workspace}-builds"
+  bucket        = "${var.name}-${terraform.workspace}-builds-${local.s3_suffix}"
   acl           = "private"
   force_destroy = true
-  provider      = aws.useast1
 }
 
 resource "aws_iam_role" "codebuild" {
