@@ -236,6 +236,17 @@ resource "aws_security_group" "web" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  dynamic "ingress" {
+    for_each = [for port in var.additional_ports : port]
+
+    content {
+      from_port = ingress.value
+      to_port   = ingress.value
+      protocol  = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -255,6 +266,17 @@ resource "aws_security_group" "services" {
     to_port         = local.services[count.index].container_port
     protocol        = "tcp"
     security_groups = [aws_security_group.web.id]
+  }
+
+  dynamic "ingress" {
+    for_each = [for port in var.additional_ports : port]
+
+    content {
+      from_port = ingress.value
+      to_port   = ingress.value
+      protocol  = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
 
   egress {
@@ -296,26 +318,6 @@ resource "aws_security_group" "services_dynamic" {
   }
 
   tags = local.services[count.index].tags
-}
-
-resource "aws_security_group_rule" "additional_port_ingress_service" {
-  for_each          = local.additional_ports
-  type              = "ingress"
-  from_port         = each.value
-  to_port           = each.value
-  protocol          = "tcp"
-  security_group_id = aws_security_group.services[0].id
-  cidr_blocks       = ["0.0.0.0/0"]
-}
-
-resource "aws_security_group_rule" "additional_port_ingress_web" {
-  for_each          = local.additional_ports
-  type              = "ingress"
-  from_port         = each.value
-  to_port           = each.value
-  protocol          = "tcp"
-  security_group_id = aws_security_group.web.id
-  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 # ALBs
