@@ -500,11 +500,11 @@ resource "aws_appautoscaling_policy" "this" {
 # CODEBUILD
 
 locals {
-  s3_suffix = data.aws_region.current.name == "us-east-1" ? "" : data.aws_region.current.name
+  s3_suffix = data.aws_region.current.name == "us-east-1" ? "" : "-${data.aws_region.current.name}"
 }
 
 resource "aws_s3_bucket" "this" {
-  bucket        = "${var.name}-${terraform.workspace}-builds-${local.s3_suffix}"
+  bucket        = "${var.name}-${terraform.workspace}-builds${local.s3_suffix}"
   acl           = "private"
   force_destroy = true
 }
