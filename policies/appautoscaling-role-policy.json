@@ -6,6 +6,7 @@
           "Action": [
               "ecs:DescribeServices",
               "ecs:UpdateService",
+              "ecs:TagResource",
               "cloudwatch:PutMetricAlarm",
               "cloudwatch:DescribeAlarms",
               "cloudwatch:DeleteAlarms"

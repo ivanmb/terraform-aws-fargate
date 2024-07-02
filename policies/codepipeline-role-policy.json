@@ -35,6 +35,7 @@
     {
       "Action": [
         "ecs:*",
+        "ecs:TagResource",
         "events:DescribeRule",
         "events:DeleteRule",
         "events:ListRuleNamesByTarget",
