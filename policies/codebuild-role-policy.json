@@ -17,6 +17,7 @@
         "ecr:BatchCheckLayerAvailability",
         "ecr:PutImage",
         "ecs:RunTask",
+        "ecs:TagResource",
         "iam:PassRole"
       ]
     },
